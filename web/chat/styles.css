@@ -783,13 +783,24 @@ input[type="range"] {
 .download-dropdown {
     display: none;
     position: absolute;
-    top: 100%;
+    top: calc(100% + 8px);
     right: 0;
     background: white;
     border: 1px solid #ddd;
-    border-radius: 4px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
     z-index: 1000;
+    min-width: 160px;
+    padding: 8px 0;
+    opacity: 0;
+    transform: translateY(-10px);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.download-dropdown.show {
+    display: block;
+    opacity: 1;
+    transform: translateY(0);
 }
 
 [data-theme="dark"] .download-dropdown {
@@ -797,28 +808,33 @@ input[type="range"] {
     border-color: #404040;
 }
 
-.download-container:hover .download-dropdown {
-    display: block;
-}
-
 .dropdown-item {
-    display: block;
+    display: flex;
+    align-items: center;
+    gap: 8px;
     width: 100%;
-    padding: 8px 16px;
+    padding: 10px 16px;
     border: none;
     background: none;
     text-align: left;
     cursor: pointer;
     white-space: nowrap;
     color: inherit;
+    font-size: 14px;
+    transition: background 0.2s ease;
 }
 
 .dropdown-item:hover {
-    background: #f0f0f0;
+    background: #f5f5f5;
 }
 
 [data-theme="dark"] .dropdown-item:hover {
-    background: #404040;
+    background: #363636;
+}
+
+.dropdown-item .material-icons {
+    font-size: 18px;
+    opacity: 0.7;
 }
 
 .header-icon-button.active {

@@ -28,8 +28,14 @@
                     <span class="material-icons">download</span>
                 </button>
                 <div class="download-dropdown" id="downloadDropdown">
-                    <button class="dropdown-item" onclick="downloadConversation('json')">JSON</button>
-                    <button class="dropdown-item" onclick="downloadConversation('markdown')">Markdown</button>
+                    <button class="dropdown-item" onclick="downloadConversation('json')">
+                        <span class="material-icons">data_object</span>
+                        JSON
+                    </button>
+                    <button class="dropdown-item" onclick="downloadConversation('markdown')">
+                        <span class="material-icons">description</span>
+                        Markdown
+                    </button>
                 </div>
             </div>
             <button id="settingsButton" class="icon-button" title="Manage Models">

@@ -996,7 +996,27 @@ function convertToMarkdown(conversation) {
     return markdown;
 }
 
+// Add click handler for download button
+document.addEventListener('DOMContentLoaded', function() {
+    const downloadBtn = document.getElementById('downloadButton');
+    const dropdown = document.getElementById('downloadDropdown');
+    
+    downloadBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        dropdown.classList.toggle('show');
+    });
+    
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function(e) {
+        if (!dropdown.contains(e.target) && !downloadBtn.contains(e.target)) {
+            dropdown.classList.remove('show');
+        }
+    });
+});
+
 function downloadConversation(format) {
+    // Hide dropdown after selection
+    document.getElementById('downloadDropdown').classList.remove('show');
     // Get current conversation
     const conversation = conversations.find(conv => conv.id === currentConversationId);
     if (!conversation) return;
