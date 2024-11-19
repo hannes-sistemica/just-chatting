@@ -655,6 +655,31 @@ input[type="range"] {
     padding-left: 48px;
 }
 
+.ai-message .copy-icon {
+    position: absolute;
+    bottom: 8px;
+    right: 8px;
+    color: #666;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    cursor: pointer;
+    background: none;
+    border: none;
+    padding: 4px;
+}
+
+.ai-message:hover .copy-icon {
+    opacity: 0.7;
+}
+
+.ai-message .copy-icon:hover {
+    opacity: 1;
+}
+
+[data-theme="dark"] .ai-message .copy-icon {
+    color: #999;
+}
+
 .ai-avatar {
     position: absolute;
     left: 8px;
