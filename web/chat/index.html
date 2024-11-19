@@ -234,6 +234,33 @@
         </div>
     </div>
 
+    <!-- Summary Modal -->
+    <div id="summaryModal" class="modal">
+        <div class="modal-content summary-modal">
+            <div class="modal-header">
+                <h2>Conversation Summary</h2>
+                <button class="close-button" onclick="closeSummaryModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="summaryContent">
+                    <div class="summary-loading" style="display: none;">
+                        <div class="summary-progress">
+                            Summarizing conversation... (<span id="summaryProgress">0</span> of <span id="summaryTotal">0</span> messages)
+                        </div>
+                        <div class="loading-animation">
+                            <div class="dots">
+                                <div class="dot"></div>
+                                <div class="dot"></div>
+                                <div class="dot"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="summaryText"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="script.js"></script>
 </body>
 </html> 
