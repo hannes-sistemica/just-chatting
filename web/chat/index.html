@@ -239,7 +239,13 @@
         <div class="modal-content summary-modal">
             <div class="modal-header">
                 <h2>Conversation Summary</h2>
-                <button class="close-button" onclick="closeSummaryModal()">&times;</button>
+                <div class="modal-header-actions">
+                    <button class="btn btn-primary" onclick="downloadSummary()">
+                        <span class="material-icons">download</span>
+                        Download
+                    </button>
+                    <button class="close-button" onclick="closeSummaryModal()">&times;</button>
+                </div>
             </div>
             <div class="modal-body">
                 <div id="summaryContent">

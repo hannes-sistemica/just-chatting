@@ -551,7 +551,12 @@ async function generateResponse(isAutoResponse = false) {
                                     fullResponse += jsonResponse.response;
                                     aiResponse.innerHTML = `
                                         <div class="ai-avatar">${currentPersona.avatar}</div>
-                                        ${marked.parse(fullResponse)}
+                                        <div class="message-content">
+                                            ${marked.parse(fullResponse)}
+                                            <button class="copy-button" onclick="copyToClipboard(this, \`${fullResponse.replace(/`/g, '\\`')}\`)">
+                                                <span class="material-icons">content_copy</span>
+                                            </button>
+                                        </div>
                                     `;
                                     aiResponse.scrollIntoView({ behavior: 'smooth', block: 'end' });
                                 }
@@ -1168,6 +1173,32 @@ function closeSummaryModal() {
     const modal = document.getElementById('summaryModal');
     modal.classList.remove('show');
     setTimeout(() => modal.style.display = 'none', 300);
+}
+
+async function copyToClipboard(button, text) {
+    try {
+        await navigator.clipboard.writeText(text);
+        const icon = button.querySelector('.material-icons');
+        icon.textContent = 'check';
+        setTimeout(() => {
+            icon.textContent = 'content_copy';
+        }, 2000);
+    } catch (err) {
+        console.error('Failed to copy text:', err);
+    }
+}
+
+function downloadSummary() {
+    const summaryText = document.getElementById('summaryText').textContent;
+    const blob = new Blob([summaryText], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'conversation-summary.md';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
 }
 
 async function generateSummary(messages = chatHistory, updateUI = true) {
