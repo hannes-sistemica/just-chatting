@@ -857,6 +857,9 @@ async function openPersonaModal(personaId = null) {
             document.getElementById('personaTempValue').textContent = '0.7';
             document.getElementById('personaPrompt').value = '';
         }
+    } catch (error) {
+        console.error('Error loading persona:', error);
+        showAlert('Error loading persona: ' + error.message);
     }
 }
 
