@@ -381,6 +381,10 @@ async function generateResponse(isAutoResponse = false) {
     } else if (autoContinue) {
         // Auto-continue mode - use next persona in the shuffled list
         document.getElementById('prompt').value = "";
+        // If we've used all personas, reshuffle the list
+        if (remainingPersonas.length === 0) {
+            remainingPersonas = [...selectedPersonas].sort(() => Math.random() - 0.5);
+        }
     }
 
     if (selectedPersonas.length === 0) {
