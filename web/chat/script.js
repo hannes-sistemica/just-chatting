@@ -574,21 +574,24 @@ async function generateResponse(isAutoResponse = false) {
             
             // Generate title after first message
             if (chatHistory.length === 1 && !conversation.hasGeneratedTitle) {
+                conversation.title = 'New Chat'; // Set temporary title
                 // Generate title asynchronously without blocking
                 generateTitle(chatHistory[0].content)
                     .then(newTitle => {
-                        // Find the conversation again to ensure we have the latest version
+                        // Find and update the conversation in the global array
                         const index = conversations.findIndex(c => c.id === currentConversationId);
                         if (index !== -1) {
                             conversations[index].title = newTitle;
                             conversations[index].hasGeneratedTitle = true;
-                            // Save to localStorage and update UI
+                            // Ensure changes are saved
                             localStorage.setItem('conversations', JSON.stringify(conversations));
+                            // Force UI update
                             updateConversationsList();
                         }
                     })
                     .catch(error => {
                         console.error('Error generating title:', error);
+                        // Keep 'New Chat' title if generation fails
                     });
             }
             
