@@ -1001,6 +1001,112 @@ if (conversations.length > 0) {
 // Initialize right sidebar, play toggle and download button
 document.getElementById('rightSidebarToggle').addEventListener('click', toggleRightSidebar);
 document.getElementById('playToggle').addEventListener('click', toggleAutoContinue);
+document.getElementById('summaryButton').addEventListener('click', showSummaryModal);
+
+function showSummaryModal() {
+    const modal = document.getElementById('summaryModal');
+    const summaryLoading = document.querySelector('.summary-loading');
+    const summaryText = document.getElementById('summaryText');
+    
+    modal.style.display = 'flex';
+    requestAnimationFrame(() => modal.classList.add('show'));
+
+    if (!currentSummary) {
+        summaryLoading.style.display = 'block';
+        summaryText.style.display = 'none';
+        generateSummary();
+    } else {
+        summaryLoading.style.display = 'none';
+        summaryText.style.display = 'block';
+        summaryText.textContent = currentSummary;
+    }
+}
+
+function closeSummaryModal() {
+    const modal = document.getElementById('summaryModal');
+    modal.classList.remove('show');
+    setTimeout(() => modal.style.display = 'none', 300);
+}
+
+async function generateSummary() {
+    const summaryProgress = document.getElementById('summaryProgress');
+    const summaryTotal = document.getElementById('summaryTotal');
+    const summaryText = document.getElementById('summaryText');
+    
+    if (!summarySettings.model) {
+        // Set first available model as default
+        try {
+            const response = await fetch(`${backendUrl}/api/tags`);
+            const data = await response.json();
+            if (data.models.length > 0) {
+                summarySettings.model = data.models[0].name;
+                localStorage.setItem('summarySettings', JSON.stringify(summarySettings));
+            }
+        } catch (error) {
+            console.error('Error fetching models:', error);
+            showAlert('Error fetching models for summary');
+            closeSummaryModal();
+            return;
+        }
+    }
+
+    const windowSize = summarySettings.windowSize || 5;
+    const totalMessages = chatHistory.length;
+    summaryTotal.textContent = totalMessages;
+
+    let summarizedText = '';
+    for (let i = 0; i < totalMessages; i += windowSize) {
+        summaryProgress.textContent = Math.min(i + windowSize, totalMessages);
+        
+        const windowMessages = chatHistory.slice(i, i + windowSize);
+        const windowText = windowMessages.map(msg => 
+            `${msg.role}: ${msg.content}`
+        ).join('\n');
+
+        try {
+            const response = await fetch(`${backendUrl}/api/generate`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    model: summarySettings.model,
+                    prompt: `Summarize this conversation segment concisely:\n\n${windowText}\n\nSummary:`,
+                    temperature: 0.7,
+                    stream: false
+                })
+            });
+
+            if (!response.ok) throw new Error('Summary generation failed');
+            
+            const result = await response.json();
+            summarizedText += result.response + '\n\n';
+            
+            // Update the visible summary as we go
+            summaryText.style.display = 'block';
+            summaryText.textContent = summarizedText;
+        } catch (error) {
+            console.error('Error generating summary:', error);
+            showAlert('Error generating summary');
+            closeSummaryModal();
+            return;
+        }
+    }
+
+    currentSummary = summarizedText;
+    document.querySelector('.summary-loading').style.display = 'none';
+}
+
+async function saveSummarySettings() {
+    const model = document.getElementById('summaryModel').value;
+    const windowSize = parseInt(document.getElementById('summaryWindow').value) || 5;
+    
+    summarySettings = { model, windowSize };
+    localStorage.setItem('summarySettings', JSON.stringify(summarySettings));
+    
+    // Clear existing summary since settings changed
+    currentSummary = '';
+    
+    showAlert('Summary settings saved');
+}
 function convertToMarkdown(conversation) {
     let markdown = `# ${conversation.title}\n\n`;
     markdown += `Date: ${new Date(conversation.id).toLocaleString()}\n\n`;
