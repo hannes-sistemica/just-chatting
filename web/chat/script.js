@@ -981,7 +981,32 @@ if (conversations.length > 0) {
 // Initialize right sidebar, play toggle and download button
 document.getElementById('rightSidebarToggle').addEventListener('click', toggleRightSidebar);
 document.getElementById('playToggle').addEventListener('click', toggleAutoContinue);
-document.getElementById('downloadButton').addEventListener('click', () => exportConversation());
+document.getElementById('downloadButton').addEventListener('click', () => {
+    // Get current conversation
+    const conversation = conversations.find(conv => conv.id === currentConversationId);
+    if (!conversation) return;
+    
+    // Create export data
+    const exportData = {
+        title: conversation.title,
+        date: new Date(conversation.id).toISOString(),
+        messages: conversation.messages
+    };
+    
+    // Convert to JSON string
+    const jsonStr = JSON.stringify(exportData, null, 2);
+    
+    // Create blob and download
+    const blob = new Blob([jsonStr], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `conversation-${conversation.title.toLowerCase().replace(/\s+/g, '-')}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+});
 updatePersonasList();
 
 function toggleAutoContinue() {
