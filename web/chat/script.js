@@ -395,7 +395,8 @@ async function generateResponse(isAutoResponse = false) {
     const promptInput = document.getElementById('prompt');
     const prompt = promptInput.value.trim();
     
-    if (!prompt) {
+    // Only require prompt for manual responses
+    if (!isAutoResponse && !prompt) {
         showAlert('Please enter a prompt');
         return;
     }
