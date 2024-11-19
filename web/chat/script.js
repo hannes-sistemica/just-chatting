@@ -431,6 +431,7 @@ async function generateResponse(isAutoResponse = false) {
             const loadingDiv = document.createElement('div');
             loadingDiv.className = 'loading-animation';
             loadingDiv.innerHTML = `
+                <span>${currentPersona.name} is responding...</span>
                 <div class="dots">
                     <div class="dot"></div>
                     <div class="dot"></div>
