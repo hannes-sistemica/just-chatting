@@ -540,16 +540,14 @@ async function generateResponse(isAutoResponse = false) {
         // Handle conversation flow after responses
         if (autoContinue) {
             // Keep conversation going after a delay
-            setTimeout(() => {
-                if (autoContinue) { // Verify auto-continue is still enabled
-                    // Reset remainingPersonas if empty to start a new round
-                    if (remainingPersonas.length === 0) {
-                        remainingPersonas = [...selectedPersonas]
-                            .sort(() => Math.random() - 0.5);
-                    }
-                    generateResponse(true);
+            if (autoContinue) { // Verify auto-continue is still enabled
+                // Reset remainingPersonas if empty to start a new round
+                if (remainingPersonas.length === 0) {
+                    remainingPersonas = [...selectedPersonas]
+                        .sort(() => Math.random() - 0.5);
                 }
-            }, 3000); // 3 second delay between responses
+                generateResponse(true);
+            }
         }
 
         // Update conversation
