@@ -26,6 +26,7 @@ let currentSummary = '';
 let chatHistory = [];
 let conversations = JSON.parse(localStorage.getItem('conversations')) || [];
 let currentConversationId = null;
+const SUMMARY_THRESHOLD = 5; // Generate summary every X messages
 
 function startNewChat() {
     // Clear current state
@@ -378,6 +379,15 @@ async function generateResponse(isAutoResponse = false) {
     if (!serverOnline) {
         showAlert('Server is offline. Please check your Ollama server.');
         return;
+    }
+    
+    // Check if we need to update the summary
+    const conversation = conversations.find(c => c.id === currentConversationId);
+    if (conversation && conversation.messages.length % SUMMARY_THRESHOLD === 0) {
+        // Run summary generation in background
+        generateSummary(conversation.messages, false).catch(error => {
+            console.error('Background summary generation failed:', error);
+        });
     }
 
     // Handle conversation flow
@@ -1042,6 +1052,10 @@ async function showSummaryModal() {
     const summaryLoading = document.querySelector('.summary-loading');
     const summaryText = document.getElementById('summaryText');
     
+    // Check for existing summary
+    const conversation = conversations.find(c => c.id === currentConversationId);
+    const existingSummary = conversation?.summary;
+    
     modal.style.display = 'flex';
     requestAnimationFrame(() => modal.classList.add('show'));
 
@@ -1070,14 +1084,14 @@ async function showSummaryModal() {
         showAlert('Error loading models for summary');
     }
 
-    if (!currentSummary) {
+    if (existingSummary) {
+        summaryLoading.style.display = 'none';
+        summaryText.style.display = 'block';
+        summaryText.textContent = existingSummary;
+    } else {
         summaryLoading.style.display = 'block';
         summaryText.style.display = 'none';
         generateSummary();
-    } else {
-        summaryLoading.style.display = 'none';
-        summaryText.style.display = 'block';
-        summaryText.textContent = currentSummary;
     }
 }
 
@@ -1087,7 +1101,7 @@ function closeSummaryModal() {
     setTimeout(() => modal.style.display = 'none', 300);
 }
 
-async function generateSummary() {
+async function generateSummary(messages = chatHistory, updateUI = true) {
     const summaryProgress = document.getElementById('summaryProgress');
     const summaryTotal = document.getElementById('summaryTotal');
     const summaryText = document.getElementById('summaryText');
@@ -1151,7 +1165,21 @@ async function generateSummary() {
     }
 
     currentSummary = summarizedText;
-    document.querySelector('.summary-loading').style.display = 'none';
+    
+    // Store summary in conversation object
+    if (currentConversationId) {
+        const conversation = conversations.find(c => c.id === currentConversationId);
+        if (conversation) {
+            conversation.summary = summarizedText;
+            localStorage.setItem('conversations', JSON.stringify(conversations));
+        }
+    }
+    
+    if (updateUI) {
+        document.querySelector('.summary-loading').style.display = 'none';
+    }
+    
+    return summarizedText;
 }
 
 async function saveSummarySettings() {
