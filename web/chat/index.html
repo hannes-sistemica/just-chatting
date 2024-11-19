@@ -1,0 +1,196 @@
+<!-- web/0-basic/index.html -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ollama Web Interface</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.2/marked.min.js"></script>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="status-bar">
+        <h1>coreOllama</h1>
+        <div class="server-status">
+            <button id="sidebarToggle" class="header-icon-button" title="Toggle Left Sidebar">
+                <span class="material-icons">menu</span>
+            </button>
+            <button id="rightSidebarToggle" class="header-icon-button" title="Toggle Right Sidebar">
+                <span class="material-icons">psychology</span>
+            </button>
+            <button id="playToggle" class="header-icon-button" title="Toggle Auto-continue">
+                <span class="material-icons">play_arrow</span>
+            </button>
+            <button id="settingsButton" class="icon-button" title="Manage Models">
+                <span class="material-icons">settings</span>
+            </button>
+            <button id="darkModeToggle" class="theme-toggle">
+                <span class="material-icons theme-icon">dark_mode</span>
+            </button>
+            <span class="status-indicator" id="serverStatus"></span>
+            <span id="serverStatusText">Checking server...</span>
+        </div>
+    </div>
+    <div class="container">
+        <div class="sidebar">
+            <button class="new-chat-btn" onclick="startNewChat()">
+                <span class="material-icons">add</span>
+                New Chat
+            </button>
+            <div class="conversations-list" id="conversationsList">
+                <!-- Conversations will be listed here -->
+            </div>
+        </div>
+        <div class="right-sidebar" id="rightSidebar">
+            <div class="sidebar-content">
+                <button class="new-persona-btn" onclick="openPersonaModal()">
+                    <span class="material-icons">add</span>
+                    New Persona
+                </button>
+                <div class="personas-list" id="personasList">
+                    <!-- Personas will be listed here -->
+                </div>
+            </div>
+        </div>
+        <div class="main-content">
+
+        <div id="response" class="response-area"></div>
+        
+        <div class="input-section">
+            <div class="input-row">
+                <div class="prompt-container">
+                    <textarea id="prompt" placeholder="Type your message here..." rows="1"></textarea>
+                    <button id="imageUpload" class="image-upload-button" title="Upload Image">
+                        <span class="material-icons">image</span>
+                    </button>
+                    <div id="imagePreview" class="image-preview"></div>
+                </div>
+                <button id="generate" onclick="generateResponse()">
+                    <span class="material-icons">send</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="settingsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Settings</h2>
+                <button class="close-button">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="settings-section">
+                    <h3>Backend Settings</h3>
+                    <div class="setting-item">
+                        <label for="backendUrl">Ollama Backend URL:</label>
+                        <input type="text" id="backendUrl" placeholder="http://localhost:11434">
+                        <button class="btn btn-primary" onclick="saveBackendUrl()">Save</button>
+                    </div>
+                </div>
+                <h3>Model Management</h3>
+                <div class="pull-section">
+                    <h3>Pull New Model</h3>
+                    <div class="pull-input">
+                        <input type="text" id="modelName" placeholder="Enter model name (e.g., llama2, mistral, codellama)">
+                        <button class="btn btn-primary" onclick="pullModel()" id="pullButton">
+                            Pull Model
+                        </button>
+                        <a href="https://ollama.com/library" target="_blank" class="btn btn-primary">
+                            Browse Library
+                        </a>
+                    </div>
+                    <div id="pullProgress" style="display: none;">
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="progressFill"></div>
+                        </div>
+                        <div class="status-message" id="pullStatus"></div>
+                    </div>
+                </div>
+
+                <h3>Installed Models</h3>
+                <div class="model-grid" id="modelGrid">
+                    <!-- Models will be populated here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Alert Modal -->
+    <div id="alertModal" class="modal">
+        <div class="modal-content alert-modal">
+            <div class="modal-header">
+                <h2>Notice</h2>
+                <button class="close-button" onclick="closeAlertModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p id="alertMessage"></p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="closeAlertModal()">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div id="confirmModal" class="modal">
+        <div class="modal-content alert-modal">
+            <div class="modal-header">
+                <h2>Confirm Delete</h2>
+                <button class="close-button" onclick="closeConfirmModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p id="confirmMessage">Are you sure you want to delete this conversation?</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="exportConversation()">
+                    <span class="material-icons">download</span>
+                    Export
+                </button>
+                <button class="btn btn-primary" onclick="closeConfirmModal()">Cancel</button>
+                <button class="btn btn-danger" onclick="confirmDelete()">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Persona Modal -->
+    <div id="personaModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Create Persona</h2>
+                <button class="close-button" onclick="closePersonaModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="personaName">Name:</label>
+                    <input type="text" id="personaName" placeholder="Enter persona name">
+                </div>
+                <div class="form-group">
+                    <label for="personaModel">Model:</label>
+                    <select id="personaModel">
+                        <option value="loading">Loading models...</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="personaTemperature">Temperature:</label>
+                    <div class="slider-container">
+                        <input type="range" id="personaTemperature" min="0" max="2" step="0.1" value="0.7">
+                        <span class="temperature-value" id="personaTempValue">0.7</span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="personaPrompt">System Prompt:</label>
+                    <textarea id="personaPrompt" placeholder="Enter system prompt" rows="4"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="savePersona()">Save</button>
+                <button class="btn btn-secondary" onclick="closePersonaModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html> 
