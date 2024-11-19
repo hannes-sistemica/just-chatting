@@ -40,7 +40,8 @@ function startNewChat() {
         id: currentConversationId,
         title: 'New Chat',
         messages: [],
-        created: Date.now()
+        created: Date.now(),
+        hasGeneratedTitle: false
     };
     
     // Add to beginning of conversations list
@@ -571,12 +572,14 @@ async function generateResponse(isAutoResponse = false) {
         if (conversation) {
             conversation.messages = [...chatHistory];
             
-            // Generate title only for first message
-            if (chatHistory.length <= 3) {
+            // Generate title after first user message and AI response
+            if (chatHistory.length === 2 && !conversation.hasGeneratedTitle) {
                 conversation.title = 'New Chat';
                 try {
-                    const newTitle = await generateTitle(prompt);
+                    const firstMessage = chatHistory[0].content;
+                    const newTitle = await generateTitle(firstMessage);
                     conversation.title = newTitle;
+                    conversation.hasGeneratedTitle = true;
                 } catch (error) {
                     console.error('Error generating title:', error);
                 }
