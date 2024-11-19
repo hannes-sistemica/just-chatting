@@ -553,10 +553,10 @@ async function generateResponse(isAutoResponse = false) {
                                         <div class="ai-avatar">${currentPersona.avatar}</div>
                                         <div class="message-content">
                                             ${marked.parse(fullResponse)}
+                                            <button class="copy-hover-icon" onclick="copyToClipboard(this, \`${fullResponse.replace(/`/g, '\\`')}\`)">
+                                                <span class="material-icons">content_copy</span>
+                                            </button>
                                         </div>
-                                        <button class="copy-icon" onclick="copyToClipboard(this, \`${fullResponse.replace(/`/g, '\\`')}\`)">
-                                            <span class="material-icons">content_copy</span>
-                                        </button>
                                     `;
                                     aiResponse.scrollIntoView({ behavior: 'smooth', block: 'end' });
                                 }
