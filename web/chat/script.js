@@ -379,8 +379,7 @@ async function generateResponse(isAutoResponse = false) {
         // Fresh start with human input
         remainingPersonas = [...selectedPersonas].sort(() => Math.random() - 0.5);
     } else if (autoContinue) {
-        // Auto-continue mode - randomly select next persona
-        remainingPersonas = [selectedPersonas[Math.floor(Math.random() * selectedPersonas.length)]];
+        // Auto-continue mode - use next persona in the shuffled list
         promptInput.value = "Please continue the conversation naturally, building upon the previous messages.";
     }
 
@@ -535,6 +534,11 @@ async function generateResponse(isAutoResponse = false) {
             // Keep conversation going after a delay
             setTimeout(() => {
                 if (autoContinue) { // Verify auto-continue is still enabled
+                    // Reset remainingPersonas if empty to start a new round
+                    if (remainingPersonas.length === 0) {
+                        remainingPersonas = [...selectedPersonas]
+                            .sort(() => Math.random() - 0.5);
+                    }
                     generateResponse(true);
                 }
             }, 3000); // 3 second delay between responses
