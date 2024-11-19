@@ -460,7 +460,6 @@ async function generateResponse(isAutoResponse = false) {
     promptInput.style.height = 'auto';
 
     // Disable generate button during responses
-    const button = document.getElementById('generate');
     button.disabled = true;
 
     try {
