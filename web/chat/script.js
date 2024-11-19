@@ -1007,9 +1007,26 @@ function showSummaryModal() {
     const modal = document.getElementById('summaryModal');
     const summaryLoading = document.querySelector('.summary-loading');
     const summaryText = document.getElementById('summaryText');
+    const summaryModelSelect = document.getElementById('summaryModel');
     
     modal.style.display = 'flex';
     requestAnimationFrame(() => modal.classList.add('show'));
+
+    // Populate model list if needed
+    try {
+        const response = await fetch(`${backendUrl}/api/tags`);
+        const data = await response.json();
+        if (data.models.length > 0) {
+            summaryModelSelect.innerHTML = data.models.map(model => 
+                `<option value="${model.name}" ${model.name === summarySettings.model ? 'selected' : ''}>
+                    ${model.name}
+                </option>`
+            ).join('');
+        }
+    } catch (error) {
+        console.error('Error fetching models:', error);
+        summaryModelSelect.innerHTML = '<option value="">Error loading models</option>';
+    }
 
     if (!currentSummary) {
         summaryLoading.style.display = 'block';
