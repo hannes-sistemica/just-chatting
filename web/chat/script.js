@@ -181,20 +181,24 @@ function updateConversationsList() {
 }
 
 async function generateTitle(firstMessage) {
+    console.log('generateTitle called with message:', firstMessage);
     try {
         // First check if llama2 model is available
+        console.log('Fetching available models from:', backendUrl);
         const response = await fetch(`${backendUrl}/api/tags`);
         const data = await response.json();
-        const hasLlama2 = data.models.some(model => model.name.startsWith('llama2'));
+        console.log('Available models:', data.models);
         
-        // Use llama2 if available, otherwise use first available model
+        const hasLlama2 = data.models.some(model => model.name.startsWith('llama2'));
         const modelToUse = hasLlama2 ? 'llama2' : data.models[0]?.name;
+        console.log('Selected model for title generation:', modelToUse);
         
         if (!modelToUse) {
             console.error('No models available for title generation');
             return 'New Chat';
         }
 
+        console.log('Sending title generation request');
         const generateResponse = await fetch(`${backendUrl}/api/generate`, {
             method: 'POST',
             headers: {
@@ -213,7 +217,10 @@ async function generateTitle(firstMessage) {
         }
 
         const result = await generateResponse.json();
-        return result.response.trim() || 'New Chat';
+        console.log('Generated title result:', result);
+        const title = result.response.trim() || 'New Chat';
+        console.log('Final processed title:', title);
+        return title;
     } catch (error) {
         console.error('Error generating title:', error);
         return 'New Conversation';
@@ -576,17 +583,25 @@ async function generateResponse(isAutoResponse = false) {
             if (chatHistory.length === 1 && !conversation.hasGeneratedTitle) {
                 conversation.title = 'New Chat'; // Set temporary title
                 // Generate title asynchronously without blocking
+                console.log('Starting title generation for conversation:', currentConversationId);
                 generateTitle(chatHistory[0].content)
                     .then(newTitle => {
+                        console.log('Generated title:', newTitle);
                         // Find and update the conversation in the global array
                         const index = conversations.findIndex(c => c.id === currentConversationId);
+                        console.log('Found conversation at index:', index);
                         if (index !== -1) {
                             conversations[index].title = newTitle;
                             conversations[index].hasGeneratedTitle = true;
+                            console.log('Updated conversation:', conversations[index]);
                             // Ensure changes are saved
                             localStorage.setItem('conversations', JSON.stringify(conversations));
+                            console.log('Saved to localStorage');
                             // Force UI update
                             updateConversationsList();
+                            console.log('Updated UI');
+                        } else {
+                            console.error('Conversation not found:', currentConversationId);
                         }
                     })
                     .catch(error => {
