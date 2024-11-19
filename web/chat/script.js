@@ -375,14 +375,12 @@ async function generateResponse(isAutoResponse = false) {
     }
 
     // Handle conversation flow
-    const promptInput = document.getElementById('prompt');
-    
     if (!isAutoResponse) {
         // Fresh start with human input
         remainingPersonas = [...selectedPersonas].sort(() => Math.random() - 0.5);
     } else if (autoContinue) {
         // Auto-continue mode - use next persona in the shuffled list
-        promptInput.value = "Please continue the conversation naturally, building upon the previous messages.";
+        document.getElementById('prompt').value = "Please continue the conversation naturally, building upon the previous messages.";
     }
 
     if (selectedPersonas.length === 0) {
