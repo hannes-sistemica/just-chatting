@@ -1003,7 +1003,7 @@ document.getElementById('rightSidebarToggle').addEventListener('click', toggleRi
 document.getElementById('playToggle').addEventListener('click', toggleAutoContinue);
 document.getElementById('summaryButton').addEventListener('click', showSummaryModal);
 
-function showSummaryModal() {
+async function showSummaryModal() {
     const modal = document.getElementById('summaryModal');
     const summaryLoading = document.querySelector('.summary-loading');
     const summaryText = document.getElementById('summaryText');
