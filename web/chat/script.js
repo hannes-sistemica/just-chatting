@@ -575,16 +575,20 @@ async function generateResponse(isAutoResponse = false) {
             // Generate title after first message
             if (chatHistory.length === 1 && !conversation.hasGeneratedTitle) {
                 conversation.title = 'New Chat';
-                try {
-                    const firstMessage = chatHistory[0].content;
-                    const newTitle = await generateTitle(firstMessage);
-                    conversation.title = newTitle;
-                    conversation.hasGeneratedTitle = true;
-                } catch (error) {
-                    console.error('Error generating title:', error);
-                }
+                // Generate title asynchronously without blocking
+                generateTitle(chatHistory[0].content)
+                    .then(newTitle => {
+                        conversation.title = newTitle;
+                        conversation.hasGeneratedTitle = true;
+                        localStorage.setItem('conversations', JSON.stringify(conversations));
+                        updateConversationsList();
+                    })
+                    .catch(error => {
+                        console.error('Error generating title:', error);
+                    });
             }
             
+            // Always save the conversation immediately
             localStorage.setItem('conversations', JSON.stringify(conversations));
             updateConversationsList();
         }
