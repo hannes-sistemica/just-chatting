@@ -572,8 +572,8 @@ async function generateResponse(isAutoResponse = false) {
         if (conversation) {
             conversation.messages = [...chatHistory];
             
-            // Generate title after first user message and AI response
-            if (chatHistory.length === 2 && !conversation.hasGeneratedTitle) {
+            // Generate title after first message
+            if (chatHistory.length === 1 && !conversation.hasGeneratedTitle) {
                 conversation.title = 'New Chat';
                 try {
                     const firstMessage = chatHistory[0].content;
