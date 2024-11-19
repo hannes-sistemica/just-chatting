@@ -50,9 +50,9 @@ function startNewChat() {
     updateConversationsList();
     loadConversation(currentConversationId);
     
-    // Show welcome message
+    // Clear response area and prompt
     const responseArea = document.getElementById('response');
-    responseArea.innerHTML = '<div class="message system-message">Nothing here yet, start chatting!</div>';
+    responseArea.innerHTML = '';
     document.getElementById('prompt').value = '';
 }
 
