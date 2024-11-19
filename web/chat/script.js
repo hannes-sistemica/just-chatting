@@ -380,7 +380,7 @@ async function generateResponse(isAutoResponse = false) {
         remainingPersonas = [...selectedPersonas].sort(() => Math.random() - 0.5);
     } else if (autoContinue) {
         // Auto-continue mode - use next persona in the shuffled list
-        document.getElementById('prompt').value = "Please continue the conversation naturally, building upon the previous messages.";
+        document.getElementById('prompt').value = "";
     }
 
     if (selectedPersonas.length === 0) {
