@@ -17,6 +17,12 @@ let remainingPersonas = [];
 let autoContinue = false;
 let selectedImage = null;
 let backendUrl = localStorage.getItem('ollamaBackendUrl') || 'http://localhost:11434';
+let summarySettings = JSON.parse(localStorage.getItem('summarySettings')) || {
+    model: '',
+    windowSize: 5
+};
+let summaryWorker = null;
+let currentSummary = '';
 let chatHistory = [];
 let conversations = JSON.parse(localStorage.getItem('conversations')) || [];
 let currentConversationId = null;
@@ -666,6 +672,20 @@ function closeSettingsModal() {
 function initModalListeners() {
     const settingsBtn = document.getElementById('settingsButton');
     const closeBtn = document.querySelector('.close-button');
+    const tabButtons = document.querySelectorAll('.tab-button');
+    
+    tabButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            // Remove active class from all buttons and contents
+            tabButtons.forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => 
+                content.classList.remove('active'));
+            
+            // Add active class to clicked button and corresponding content
+            button.classList.add('active');
+            document.getElementById(`${button.dataset.tab}Tab`).classList.add('active');
+        });
+    });
     
     const handleSettingsClick = () => openSettingsModal();
     const handleCloseClick = () => closeSettingsModal();
