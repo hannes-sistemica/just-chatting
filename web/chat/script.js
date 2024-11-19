@@ -1007,15 +1007,33 @@ async function showSummaryModal() {
     const modal = document.getElementById('summaryModal');
     const summaryLoading = document.querySelector('.summary-loading');
     const summaryText = document.getElementById('summaryText');
-    const summaryModelSelect = document.getElementById('summaryModel');
     
     modal.style.display = 'flex';
     requestAnimationFrame(() => modal.classList.add('show'));
 
-    // Populate model list
-    await fetchModels();
-    if (summarySettings.model) {
-        summaryModelSelect.value = summarySettings.model;
+    try {
+        // Fetch available models
+        const response = await fetch(`${backendUrl}/api/tags`);
+        const data = await response.json();
+        
+        // Update model dropdown
+        const summaryModelSelect = document.getElementById('summaryModel');
+        summaryModelSelect.innerHTML = data.models.map(model => 
+            `<option value="${model.name}">${model.name}</option>`
+        ).join('');
+        
+        // Set previously selected model if it exists
+        if (summarySettings.model) {
+            summaryModelSelect.value = summarySettings.model;
+        } else if (data.models.length > 0) {
+            // Set first available model as default
+            summarySettings.model = data.models[0].name;
+            summaryModelSelect.value = data.models[0].name;
+            localStorage.setItem('summarySettings', JSON.stringify(summarySettings));
+        }
+    } catch (error) {
+        console.error('Error loading models:', error);
+        showAlert('Error loading models for summary');
     }
 
     if (!currentSummary) {
