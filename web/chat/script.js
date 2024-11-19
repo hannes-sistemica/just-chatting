@@ -574,14 +574,15 @@ async function generateResponse(isAutoResponse = false) {
             
             // Generate title after first message
             if (chatHistory.length === 1 && !conversation.hasGeneratedTitle) {
-                conversation.title = 'New Chat';
                 // Generate title asynchronously without blocking
                 generateTitle(chatHistory[0].content)
                     .then(newTitle => {
-                        const updatedConversation = conversations.find(c => c.id === currentConversationId);
-                        if (updatedConversation) {
-                            updatedConversation.title = newTitle;
-                            updatedConversation.hasGeneratedTitle = true;
+                        // Find the conversation again to ensure we have the latest version
+                        const index = conversations.findIndex(c => c.id === currentConversationId);
+                        if (index !== -1) {
+                            conversations[index].title = newTitle;
+                            conversations[index].hasGeneratedTitle = true;
+                            // Save to localStorage and update UI
                             localStorage.setItem('conversations', JSON.stringify(conversations));
                             updateConversationsList();
                         }
