@@ -5,7 +5,7 @@ if (personas.length === 0) {
     personas = [{
         id: Date.now(),
         name: "Assistant",
-        model: "llama2", // Will be updated when models are fetched
+        model: "", // Will be set to first available model
         temperature: 0.7,
         systemPrompt: "You are a helpful AI assistant. You provide clear, accurate, and well-reasoned responses while being direct and concise.",
         avatar: "AI"
@@ -319,6 +319,13 @@ async function fetchModels() {
         const response = await fetch(`${backendUrl}/api/tags`);
         const data = await response.json();
         
+        // Update default Assistant's model if needed
+        if (personas.length === 1 && personas[0].name === "Assistant" && !personas[0].model && data.models.length > 0) {
+            personas[0].model = data.models[0].name;
+            localStorage.setItem('personas', JSON.stringify(personas));
+            updatePersonasList();
+        }
+
         // Create options HTML once
         const optionsHTML = data.models.map(model => 
             `<option value="${model.name}">${model.name}</option>`
