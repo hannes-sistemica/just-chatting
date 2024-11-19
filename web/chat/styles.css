@@ -907,6 +907,48 @@ input[type="range"] {
     border-radius: 16px;
     max-height: 85vh;
     overflow-y: auto;
+}
+
+.tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 24px;
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 8px;
+}
+
+.tab-button {
+    padding: 8px 16px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+}
+
+.tab-button:hover {
+    background: #f0f0f0;
+}
+
+.tab-button.active {
+    background: #007bff;
+    color: white;
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+[data-theme="dark"] .tab-button:hover {
+    background: #333;
+}
+
+[data-theme="dark"] .tab-button.active {
+    background: #007bff;
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
     transform: translateY(20px);
     opacity: 0;
