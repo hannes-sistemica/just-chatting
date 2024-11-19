@@ -32,8 +32,6 @@ function startNewChat() {
     // Clear current state
     currentConversationId = Date.now();
     chatHistory = [];
-    document.getElementById('response').innerHTML = '';
-    document.getElementById('prompt').value = '';
     
     // Create new conversation
     const conversation = {
@@ -51,6 +49,11 @@ function startNewChat() {
     // Update UI
     updateConversationsList();
     loadConversation(currentConversationId);
+    
+    // Show welcome message
+    const responseArea = document.getElementById('response');
+    responseArea.innerHTML = '<div class="message system-message">Nothing here yet, start chatting!</div>';
+    document.getElementById('prompt').value = '';
 }
 
 function loadConversation(id) {
@@ -1096,6 +1099,11 @@ function toggleRightSidebar() {
 
 // Initialize conversation interface
 conversations = JSON.parse(localStorage.getItem('conversations')) || [];
+
+// Clean up empty conversations
+conversations = conversations.filter(conv => conv.messages.length > 0 || conv.id === currentConversationId);
+localStorage.setItem('conversations', JSON.stringify(conversations));
+
 if (conversations.length > 0) {
     loadConversation(conversations[0].id);
     updateConversationsList();
