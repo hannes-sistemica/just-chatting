@@ -981,32 +981,54 @@ if (conversations.length > 0) {
 // Initialize right sidebar, play toggle and download button
 document.getElementById('rightSidebarToggle').addEventListener('click', toggleRightSidebar);
 document.getElementById('playToggle').addEventListener('click', toggleAutoContinue);
-document.getElementById('downloadButton').addEventListener('click', () => {
+function convertToMarkdown(conversation) {
+    let markdown = `# ${conversation.title}\n\n`;
+    markdown += `Date: ${new Date(conversation.id).toLocaleString()}\n\n`;
+    
+    conversation.messages.forEach(msg => {
+        if (msg.role === 'Human') {
+            markdown += `**Human**: ${msg.content}\n\n`;
+        } else {
+            markdown += `**${msg.role}** (${msg.avatar}): ${msg.content}\n\n`;
+        }
+    });
+    
+    return markdown;
+}
+
+function downloadConversation(format) {
     // Get current conversation
     const conversation = conversations.find(conv => conv.id === currentConversationId);
     if (!conversation) return;
     
-    // Create export data
-    const exportData = {
-        title: conversation.title,
-        date: new Date(conversation.id).toISOString(),
-        messages: conversation.messages
-    };
+    let content, type, extension;
     
-    // Convert to JSON string
-    const jsonStr = JSON.stringify(exportData, null, 2);
+    if (format === 'json') {
+        const exportData = {
+            title: conversation.title,
+            date: new Date(conversation.id).toISOString(),
+            messages: conversation.messages
+        };
+        content = JSON.stringify(exportData, null, 2);
+        type = 'application/json';
+        extension = 'json';
+    } else {
+        content = convertToMarkdown(conversation);
+        type = 'text/markdown';
+        extension = 'md';
+    }
     
     // Create blob and download
-    const blob = new Blob([jsonStr], { type: 'application/json' });
+    const blob = new Blob([content], { type });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `conversation-${conversation.title.toLowerCase().replace(/\s+/g, '-')}.json`;
+    a.download = `conversation-${conversation.title.toLowerCase().replace(/\s+/g, '-')}.${extension}`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-});
+}
 updatePersonasList();
 
 function toggleAutoContinue() {
