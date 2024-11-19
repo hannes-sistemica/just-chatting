@@ -578,10 +578,13 @@ async function generateResponse(isAutoResponse = false) {
                 // Generate title asynchronously without blocking
                 generateTitle(chatHistory[0].content)
                     .then(newTitle => {
-                        conversation.title = newTitle;
-                        conversation.hasGeneratedTitle = true;
-                        localStorage.setItem('conversations', JSON.stringify(conversations));
-                        updateConversationsList();
+                        const updatedConversation = conversations.find(c => c.id === currentConversationId);
+                        if (updatedConversation) {
+                            updatedConversation.title = newTitle;
+                            updatedConversation.hasGeneratedTitle = true;
+                            localStorage.setItem('conversations', JSON.stringify(conversations));
+                            updateConversationsList();
+                        }
                     })
                     .catch(error => {
                         console.error('Error generating title:', error);
