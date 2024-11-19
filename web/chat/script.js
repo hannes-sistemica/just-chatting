@@ -396,16 +396,19 @@ async function generateResponse(isAutoResponse = false) {
         return;
     }
 
-    // Add user's prompt to the response area and chat history
     const responseDiv = document.getElementById('response');
-    const userMessage = document.createElement('div');
-    userMessage.className = 'message user-message';
-    userMessage.textContent = prompt;
-    responseDiv.appendChild(userMessage);
-    userMessage.scrollIntoView({ behavior: 'smooth', block: 'end' });
     
-    // Add to chat history
-    chatHistory.push({ role: 'Human', content: prompt });
+    // Only add user message if this is not an auto-response
+    if (!isAutoResponse) {
+        const userMessage = document.createElement('div');
+        userMessage.className = 'message user-message';
+        userMessage.textContent = prompt;
+        responseDiv.appendChild(userMessage);
+        userMessage.scrollIntoView({ behavior: 'smooth', block: 'end' });
+        
+        // Add to chat history
+        chatHistory.push({ role: 'Human', content: prompt });
+    }
 
     // Clear input field and reset height
     promptInput.value = '';
