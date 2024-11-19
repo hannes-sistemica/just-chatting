@@ -1,5 +1,17 @@
 let serverOnline = false;
 let personas = JSON.parse(localStorage.getItem('personas')) || [];
+// Create default Assistant persona if no personas exist
+if (personas.length === 0) {
+    personas = [{
+        id: Date.now(),
+        name: "Assistant",
+        model: "llama2", // Will be updated when models are fetched
+        temperature: 0.7,
+        systemPrompt: "You are a helpful AI assistant. You provide clear, accurate, and well-reasoned responses while being direct and concise.",
+        avatar: "AI"
+    }];
+    localStorage.setItem('personas', JSON.stringify(personas));
+}
 let selectedPersonas = [];
 let remainingPersonas = [];
 let autoContinue = false;
