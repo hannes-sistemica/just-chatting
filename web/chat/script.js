@@ -596,14 +596,17 @@ async function generateResponse(isAutoResponse = false) {
         if (conversation) {
             conversation.messages = [...chatHistory];
             
-            // Generate title after first message
+            // Only generate title once after the first message
             console.log('Checking title generation conditions:', {
                 chatHistoryLength: chatHistory.length,
                 hasGeneratedTitle: conversation.hasGeneratedTitle,
                 conversationId: currentConversationId
             });
             
-            if (chatHistory.length === 1 && !conversation.hasGeneratedTitle) {
+            if (!conversation.hasGeneratedTitle && chatHistory.length > 0) {
+                // Mark as generated immediately to prevent multiple attempts
+                conversation.hasGeneratedTitle = true;
+                localStorage.setItem('conversations', JSON.stringify(conversations));
                 console.log('Title generation conditions met');
                 conversation.title = 'New Chat'; // Set temporary title
                 
