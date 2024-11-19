@@ -93,7 +93,12 @@ function loadConversation(id) {
 let pendingDeleteId = null;
 
 function deleteConversation(id, event) {
-    event.stopPropagation(); // Prevent triggering the conversation load
+    // Ensure the event doesn't bubble up
+    if (event) {
+        event.stopPropagation();
+        event.preventDefault();
+    }
+    
     pendingDeleteId = id;
     
     const modal = document.getElementById('confirmModal');
@@ -393,6 +398,12 @@ async function generateResponse(isAutoResponse = false) {
         showAlert('Server is offline. Please check your Ollama server.');
         return;
     }
+
+    // Prevent multiple simultaneous responses
+    const button = document.getElementById('generate');
+    if (button.disabled) {
+        return;
+    }
     
     // Check if we need to update the summary
     const conversation = conversations.find(c => c.id === currentConversationId);
@@ -568,15 +579,17 @@ async function generateResponse(isAutoResponse = false) {
 
         // Handle conversation flow after responses
         if (autoContinue) {
-            // Keep conversation going after a delay
-            if (autoContinue) { // Verify auto-continue is still enabled
-                // Reset remainingPersonas if empty to start a new round
-                if (remainingPersonas.length === 0) {
-                    remainingPersonas = [...selectedPersonas]
-                        .sort(() => Math.random() - 0.5);
+            // Add a small delay before continuing to prevent UI lock
+            setTimeout(() => {
+                if (autoContinue) { // Verify auto-continue is still enabled
+                    // Reset remainingPersonas if empty to start a new round
+                    if (remainingPersonas.length === 0) {
+                        remainingPersonas = [...selectedPersonas]
+                            .sort(() => Math.random() - 0.5);
+                    }
+                    generateResponse(true);
                 }
-                generateResponse(true);
-            }
+            }, 1000); // 1 second delay
         }
 
         // Update conversation
