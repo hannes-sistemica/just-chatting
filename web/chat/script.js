@@ -636,7 +636,41 @@ async function openSettingsModal() {
     modal.style.display = 'flex';
     requestAnimationFrame(() => modal.classList.add('show'));
     document.getElementById('backendUrl').value = backendUrl;
-    await fetchModels(); // Wait for models to load
+    
+    // Fetch and populate models
+    try {
+        const response = await fetch(`${backendUrl}/api/tags`);
+        const data = await response.json();
+        
+        // Update model grid in settings
+        const modelGrid = document.getElementById('modelGrid');
+        if (modelGrid) {
+            modelGrid.innerHTML = '';
+            data.models.forEach(model => {
+                const card = document.createElement('div');
+                card.className = 'model-card';
+                card.innerHTML = `
+                    <h3>${model.name}</h3>
+                    <div class="model-meta">
+                        <span class="tag">Size: ${formatSize(model.size)}</span>
+                        <span class="tag">Modified: ${formatDate(model.modified_at)}</span>
+                    </div>
+                    <div class="model-actions">
+                        <button class="btn btn-danger" onclick="deleteModel('${model.name}')">
+                            Delete
+                        </button>
+                    </div>
+                `;
+                modelGrid.appendChild(card);
+            });
+        }
+    } catch (error) {
+        console.error('Error fetching models:', error);
+        const modelGrid = document.getElementById('modelGrid');
+        if (modelGrid) {
+            modelGrid.innerHTML = '<div>Error loading models</div>';
+        }
+    }
 }
 
 function saveBackendUrl() {
