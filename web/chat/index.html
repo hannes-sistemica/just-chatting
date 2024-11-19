@@ -23,6 +23,24 @@
             <button id="playToggle" class="header-icon-button" title="Toggle Auto-continue">
                 <span class="material-icons">play_arrow</span>
             </button>
+            <button id="summaryButton" class="header-icon-button" title="Show Conversation Summary">
+                <span class="material-icons">summarize</span>
+            </button>
+            <div class="download-container">
+                <button id="downloadButton" class="header-icon-button" title="Download Current Chat">
+                    <span class="material-icons">download</span>
+                </button>
+                <div class="download-dropdown" id="downloadDropdown">
+                    <button class="dropdown-item" onclick="downloadConversation('json')">
+                        <span class="material-icons">data_object</span>
+                        JSON
+                    </button>
+                    <button class="dropdown-item" onclick="downloadConversation('markdown')">
+                        <span class="material-icons">description</span>
+                        Markdown
+                    </button>
+                </div>
+            </div>
             <button id="settingsButton" class="icon-button" title="Manage Models">
                 <span class="material-icons">settings</span>
             </button>
@@ -81,15 +99,23 @@
                 <button class="close-button">&times;</button>
             </div>
             <div class="modal-body">
-                <div class="settings-section">
-                    <h3>Backend Settings</h3>
-                    <div class="setting-item">
-                        <label for="backendUrl">Ollama Backend URL:</label>
-                        <input type="text" id="backendUrl" placeholder="http://localhost:11434">
-                        <button class="btn btn-primary" onclick="saveBackendUrl()">Save</button>
+                <div class="tabs">
+                    <button class="tab-button active" data-tab="backend">Backend</button>
+                    <button class="tab-button" data-tab="models">Models</button>
+                    <button class="tab-button" data-tab="summary">Summary Agent</button>
+                </div>
+                <div class="tab-content active" id="backendTab">
+                    <div class="settings-section">
+                        <h3>Backend Settings</h3>
+                        <div class="setting-item">
+                            <label for="backendUrl">Ollama Backend URL:</label>
+                            <input type="text" id="backendUrl" placeholder="http://localhost:11434">
+                            <button class="btn btn-primary" onclick="saveBackendUrl()">Save</button>
+                        </div>
                     </div>
                 </div>
-                <h3>Model Management</h3>
+                <div class="tab-content" id="modelsTab">
+                    <h3>Model Management</h3>
                 <div class="pull-section">
                     <h3>Pull New Model</h3>
                     <div class="pull-input">
@@ -110,8 +136,25 @@
                 </div>
 
                 <h3>Installed Models</h3>
-                <div class="model-grid" id="modelGrid">
-                    <!-- Models will be populated here -->
+                    <div class="model-grid" id="modelGrid">
+                        <!-- Models will be populated here -->
+                    </div>
+                </div>
+                <div class="tab-content" id="summaryTab">
+                    <div class="settings-section">
+                        <h3>Summary Settings</h3>
+                        <div class="setting-item">
+                            <label for="summaryModel">Summary Model:</label>
+                            <select id="summaryModel">
+                                <option value="">Loading models...</option>
+                            </select>
+                        </div>
+                        <div class="setting-item">
+                            <label for="summaryWindow">Messages per Summary Window:</label>
+                            <input type="number" id="summaryWindow" min="1" max="20" value="5">
+                        </div>
+                        <button class="btn btn-primary" onclick="saveSummarySettings()">Save Settings</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -187,6 +230,39 @@
             <div class="modal-footer">
                 <button class="btn btn-primary" onclick="savePersona()">Save</button>
                 <button class="btn btn-secondary" onclick="closePersonaModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Summary Modal -->
+    <div id="summaryModal" class="modal">
+        <div class="modal-content summary-modal">
+            <div class="modal-header">
+                <h2>Conversation Summary</h2>
+                <div class="modal-header-actions">
+                    <button class="btn btn-primary" onclick="downloadSummary()">
+                        <span class="material-icons">download</span>
+                        Download
+                    </button>
+                    <button class="close-button" onclick="closeSummaryModal()">&times;</button>
+                </div>
+            </div>
+            <div class="modal-body">
+                <div id="summaryContent">
+                    <div class="summary-loading" style="display: none;">
+                        <div class="summary-progress">
+                            Summarizing conversation... (<span id="summaryProgress">0</span> of <span id="summaryTotal">0</span> messages)
+                        </div>
+                        <div class="loading-animation">
+                            <div class="dots">
+                                <div class="dot"></div>
+                                <div class="dot"></div>
+                                <div class="dot"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="summaryText"></div>
+                </div>
             </div>
         </div>
     </div>

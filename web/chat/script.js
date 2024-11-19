@@ -17,23 +17,29 @@ let remainingPersonas = [];
 let autoContinue = false;
 let selectedImage = null;
 let backendUrl = localStorage.getItem('ollamaBackendUrl') || 'http://localhost:11434';
+let summarySettings = JSON.parse(localStorage.getItem('summarySettings')) || {
+    model: '',
+    windowSize: 5
+};
+let summaryWorker = null;
+let currentSummary = '';
 let chatHistory = [];
 let conversations = JSON.parse(localStorage.getItem('conversations')) || [];
 let currentConversationId = null;
+const SUMMARY_THRESHOLD = 5; // Generate summary every X messages
 
 function startNewChat() {
     // Clear current state
     currentConversationId = Date.now();
     chatHistory = [];
-    document.getElementById('response').innerHTML = '';
-    document.getElementById('prompt').value = '';
     
     // Create new conversation
     const conversation = {
         id: currentConversationId,
         title: 'New Chat',
         messages: [],
-        created: Date.now()
+        created: Date.now(),
+        hasGeneratedTitle: false
     };
     
     // Add to beginning of conversations list
@@ -43,6 +49,11 @@ function startNewChat() {
     // Update UI
     updateConversationsList();
     loadConversation(currentConversationId);
+    
+    // Clear response area and prompt
+    const responseArea = document.getElementById('response');
+    responseArea.innerHTML = '';
+    document.getElementById('prompt').value = '';
 }
 
 function loadConversation(id) {
@@ -85,7 +96,12 @@ function loadConversation(id) {
 let pendingDeleteId = null;
 
 function deleteConversation(id, event) {
-    event.stopPropagation(); // Prevent triggering the conversation load
+    // Ensure the event doesn't bubble up
+    if (event) {
+        event.stopPropagation();
+        event.preventDefault();
+    }
+    
     pendingDeleteId = id;
     
     const modal = document.getElementById('confirmModal');
@@ -173,20 +189,29 @@ function updateConversationsList() {
 }
 
 async function generateTitle(firstMessage) {
+    console.log('generateTitle called with:', {
+        message: firstMessage,
+        backendUrl: backendUrl,
+        currentConversationId: currentConversationId
+    });
+    
     try {
         // First check if llama2 model is available
+        console.log('Fetching available models');
         const response = await fetch(`${backendUrl}/api/tags`);
         const data = await response.json();
-        const hasLlama2 = data.models.some(model => model.name.startsWith('llama2'));
+        console.log('Available models:', data.models);
         
-        // Use llama2 if available, otherwise use first available model
+        const hasLlama2 = data.models.some(model => model.name.startsWith('llama2'));
         const modelToUse = hasLlama2 ? 'llama2' : data.models[0]?.name;
+        console.log('Selected model for title generation:', modelToUse);
         
         if (!modelToUse) {
             console.error('No models available for title generation');
             return 'New Chat';
         }
 
+        console.log('Sending title generation request');
         const generateResponse = await fetch(`${backendUrl}/api/generate`, {
             method: 'POST',
             headers: {
@@ -205,7 +230,10 @@ async function generateTitle(firstMessage) {
         }
 
         const result = await generateResponse.json();
-        return result.response.trim() || 'New Chat';
+        console.log('Generated title result:', result);
+        const title = result.response.trim() || 'New Chat';
+        console.log('Final processed title:', title);
+        return title;
     } catch (error) {
         console.error('Error generating title:', error);
         return 'New Conversation';
@@ -374,6 +402,21 @@ async function generateResponse(isAutoResponse = false) {
         return;
     }
 
+    // Prevent multiple simultaneous responses
+    const button = document.getElementById('generate');
+    if (button.disabled) {
+        return;
+    }
+    
+    // Check if we need to update the summary
+    const conversation = conversations.find(c => c.id === currentConversationId);
+    if (conversation && conversation.messages.length % SUMMARY_THRESHOLD === 0) {
+        // Run summary generation in background
+        generateSummary(conversation.messages, false).catch(error => {
+            console.error('Background summary generation failed:', error);
+        });
+    }
+
     // Handle conversation flow
     if (!isAutoResponse) {
         // Fresh start with human input
@@ -420,7 +463,6 @@ async function generateResponse(isAutoResponse = false) {
     promptInput.style.height = 'auto';
 
     // Disable generate button during responses
-    const button = document.getElementById('generate');
     button.disabled = true;
 
     try {
@@ -509,7 +551,12 @@ async function generateResponse(isAutoResponse = false) {
                                     fullResponse += jsonResponse.response;
                                     aiResponse.innerHTML = `
                                         <div class="ai-avatar">${currentPersona.avatar}</div>
-                                        ${marked.parse(fullResponse)}
+                                        <div class="message-content">
+                                            ${marked.parse(fullResponse)}
+                                            <button class="copy-hover-icon" onclick="copyToClipboard(this, \`${fullResponse.replace(/`/g, '\\`')}\`)">
+                                                <span class="material-icons">content_copy</span>
+                                            </button>
+                                        </div>
                                     `;
                                     aiResponse.scrollIntoView({ behavior: 'smooth', block: 'end' });
                                 }
@@ -539,15 +586,17 @@ async function generateResponse(isAutoResponse = false) {
 
         // Handle conversation flow after responses
         if (autoContinue) {
-            // Keep conversation going after a delay
-            if (autoContinue) { // Verify auto-continue is still enabled
-                // Reset remainingPersonas if empty to start a new round
-                if (remainingPersonas.length === 0) {
-                    remainingPersonas = [...selectedPersonas]
-                        .sort(() => Math.random() - 0.5);
+            // Add a small delay before continuing to prevent UI lock
+            setTimeout(() => {
+                if (autoContinue) { // Verify auto-continue is still enabled
+                    // Reset remainingPersonas if empty to start a new round
+                    if (remainingPersonas.length === 0) {
+                        remainingPersonas = [...selectedPersonas]
+                            .sort(() => Math.random() - 0.5);
+                    }
+                    generateResponse(true);
                 }
-                generateResponse(true);
-            }
+            }, 1000); // 1 second delay
         }
 
         // Update conversation
@@ -555,17 +604,53 @@ async function generateResponse(isAutoResponse = false) {
         if (conversation) {
             conversation.messages = [...chatHistory];
             
-            // Generate title only for first message
-            if (chatHistory.length <= 3) {
-                conversation.title = 'New Chat';
-                try {
-                    const newTitle = await generateTitle(prompt);
-                    conversation.title = newTitle;
-                } catch (error) {
-                    console.error('Error generating title:', error);
-                }
+            // Only generate title once after the first message
+            console.log('Checking title generation conditions:', {
+                chatHistoryLength: chatHistory.length,
+                hasGeneratedTitle: conversation.hasGeneratedTitle,
+                conversationId: currentConversationId
+            });
+            
+            if (!conversation.hasGeneratedTitle && chatHistory.length > 0) {
+                // Mark as generated immediately to prevent multiple attempts
+                conversation.hasGeneratedTitle = true;
+                localStorage.setItem('conversations', JSON.stringify(conversations));
+                console.log('Title generation conditions met');
+                conversation.title = 'New Chat'; // Set temporary title
+                
+                // Generate title asynchronously without blocking
+                console.log('Starting title generation for conversation:', {
+                    id: currentConversationId,
+                    firstMessage: chatHistory[0].content
+                });
+                
+                generateTitle(chatHistory[0].content)
+                    .then(newTitle => {
+                        console.log('Generated title:', newTitle);
+                        // Find and update the conversation in the global array
+                        const index = conversations.findIndex(c => c.id === currentConversationId);
+                        console.log('Found conversation at index:', index);
+                        if (index !== -1) {
+                            conversations[index].title = newTitle;
+                            conversations[index].hasGeneratedTitle = true;
+                            console.log('Updated conversation:', conversations[index]);
+                            // Ensure changes are saved
+                            localStorage.setItem('conversations', JSON.stringify(conversations));
+                            console.log('Saved to localStorage');
+                            // Force UI update
+                            updateConversationsList();
+                            console.log('Updated UI');
+                        } else {
+                            console.error('Conversation not found:', currentConversationId);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error generating title:', error);
+                        // Keep 'New Chat' title if generation fails
+                    });
             }
             
+            // Always save the conversation immediately
             localStorage.setItem('conversations', JSON.stringify(conversations));
             updateConversationsList();
         }
@@ -630,7 +715,41 @@ async function openSettingsModal() {
     modal.style.display = 'flex';
     requestAnimationFrame(() => modal.classList.add('show'));
     document.getElementById('backendUrl').value = backendUrl;
-    await fetchModels(); // Wait for models to load
+    
+    // Fetch and populate models
+    try {
+        const response = await fetch(`${backendUrl}/api/tags`);
+        const data = await response.json();
+        
+        // Update model grid in settings
+        const modelGrid = document.getElementById('modelGrid');
+        if (modelGrid) {
+            modelGrid.innerHTML = '';
+            data.models.forEach(model => {
+                const card = document.createElement('div');
+                card.className = 'model-card';
+                card.innerHTML = `
+                    <h3>${model.name}</h3>
+                    <div class="model-meta">
+                        <span class="tag">Size: ${formatSize(model.size)}</span>
+                        <span class="tag">Modified: ${formatDate(model.modified_at)}</span>
+                    </div>
+                    <div class="model-actions">
+                        <button class="btn btn-danger" onclick="deleteModel('${model.name}')">
+                            Delete
+                        </button>
+                    </div>
+                `;
+                modelGrid.appendChild(card);
+            });
+        }
+    } catch (error) {
+        console.error('Error fetching models:', error);
+        const modelGrid = document.getElementById('modelGrid');
+        if (modelGrid) {
+            modelGrid.innerHTML = '<div>Error loading models</div>';
+        }
+    }
 }
 
 function saveBackendUrl() {
@@ -666,6 +785,20 @@ function closeSettingsModal() {
 function initModalListeners() {
     const settingsBtn = document.getElementById('settingsButton');
     const closeBtn = document.querySelector('.close-button');
+    const tabButtons = document.querySelectorAll('.tab-button');
+    
+    tabButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            // Remove active class from all buttons and contents
+            tabButtons.forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => 
+                content.classList.remove('active'));
+            
+            // Add active class to clicked button and corresponding content
+            button.classList.add('active');
+            document.getElementById(`${button.dataset.tab}Tab`).classList.add('active');
+        });
+    });
     
     const handleSettingsClick = () => openSettingsModal();
     const handleCloseClick = () => closeSettingsModal();
@@ -971,6 +1104,11 @@ function toggleRightSidebar() {
 
 // Initialize conversation interface
 conversations = JSON.parse(localStorage.getItem('conversations')) || [];
+
+// Clean up empty conversations
+conversations = conversations.filter(conv => conv.messages.length > 0 || conv.id === currentConversationId);
+localStorage.setItem('conversations', JSON.stringify(conversations));
+
 if (conversations.length > 0) {
     loadConversation(conversations[0].id);
     updateConversationsList();
@@ -978,9 +1116,252 @@ if (conversations.length > 0) {
     startNewChat();
 }
 
-// Initialize right sidebar and play toggle
+// Initialize right sidebar, play toggle and download button
 document.getElementById('rightSidebarToggle').addEventListener('click', toggleRightSidebar);
 document.getElementById('playToggle').addEventListener('click', toggleAutoContinue);
+document.getElementById('summaryButton').addEventListener('click', showSummaryModal);
+
+async function showSummaryModal() {
+    const modal = document.getElementById('summaryModal');
+    const summaryLoading = document.querySelector('.summary-loading');
+    const summaryText = document.getElementById('summaryText');
+    
+    // Check for existing summary
+    const conversation = conversations.find(c => c.id === currentConversationId);
+    const existingSummary = conversation?.summary;
+    
+    modal.style.display = 'flex';
+    requestAnimationFrame(() => modal.classList.add('show'));
+
+    try {
+        // Fetch available models
+        const response = await fetch(`${backendUrl}/api/tags`);
+        const data = await response.json();
+        
+        // Update model dropdown
+        const summaryModelSelect = document.getElementById('summaryModel');
+        summaryModelSelect.innerHTML = data.models.map(model => 
+            `<option value="${model.name}">${model.name}</option>`
+        ).join('');
+        
+        // Set previously selected model if it exists
+        if (summarySettings.model) {
+            summaryModelSelect.value = summarySettings.model;
+        } else if (data.models.length > 0) {
+            // Set first available model as default
+            summarySettings.model = data.models[0].name;
+            summaryModelSelect.value = data.models[0].name;
+            localStorage.setItem('summarySettings', JSON.stringify(summarySettings));
+        }
+    } catch (error) {
+        console.error('Error loading models:', error);
+        showAlert('Error loading models for summary');
+    }
+
+    if (existingSummary) {
+        summaryLoading.style.display = 'none';
+        summaryText.style.display = 'block';
+        summaryText.textContent = existingSummary;
+    } else {
+        summaryLoading.style.display = 'block';
+        summaryText.style.display = 'none';
+        generateSummary();
+    }
+}
+
+function closeSummaryModal() {
+    const modal = document.getElementById('summaryModal');
+    modal.classList.remove('show');
+    setTimeout(() => modal.style.display = 'none', 300);
+}
+
+async function copyToClipboard(button, text) {
+    try {
+        await navigator.clipboard.writeText(text);
+        const icon = button.querySelector('.material-icons');
+        icon.textContent = 'check';
+        setTimeout(() => {
+            icon.textContent = 'content_copy';
+        }, 2000);
+    } catch (err) {
+        console.error('Failed to copy text:', err);
+    }
+}
+
+function downloadSummary() {
+    const summaryText = document.getElementById('summaryText').textContent;
+    const blob = new Blob([summaryText], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'conversation-summary.md';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+async function generateSummary(messages = chatHistory, updateUI = true) {
+    const summaryProgress = document.getElementById('summaryProgress');
+    const summaryTotal = document.getElementById('summaryTotal');
+    const summaryText = document.getElementById('summaryText');
+    
+    if (!summarySettings.model) {
+        // Set first available model as default
+        try {
+            const response = await fetch(`${backendUrl}/api/tags`);
+            const data = await response.json();
+            if (data.models.length > 0) {
+                summarySettings.model = data.models[0].name;
+                localStorage.setItem('summarySettings', JSON.stringify(summarySettings));
+            }
+        } catch (error) {
+            console.error('Error fetching models:', error);
+            showAlert('Error fetching models for summary');
+            closeSummaryModal();
+            return;
+        }
+    }
+
+    const windowSize = summarySettings.windowSize || 5;
+    const totalMessages = chatHistory.length;
+    summaryTotal.textContent = totalMessages;
+
+    let summarizedText = '';
+    for (let i = 0; i < totalMessages; i += windowSize) {
+        summaryProgress.textContent = Math.min(i + windowSize, totalMessages);
+        
+        const windowMessages = chatHistory.slice(i, i + windowSize);
+        const windowText = windowMessages.map(msg => 
+            `${msg.role}: ${msg.content}`
+        ).join('\n');
+
+        try {
+            const response = await fetch(`${backendUrl}/api/generate`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    model: summarySettings.model,
+                    prompt: `Summarize this conversation segment concisely:\n\n${windowText}\n\nSummary:`,
+                    temperature: 0.7,
+                    stream: false
+                })
+            });
+
+            if (!response.ok) throw new Error('Summary generation failed');
+            
+            const result = await response.json();
+            summarizedText += result.response + '\n\n';
+            
+            // Update the visible summary as we go
+            summaryText.style.display = 'block';
+            summaryText.textContent = summarizedText;
+        } catch (error) {
+            console.error('Error generating summary:', error);
+            showAlert('Error generating summary');
+            closeSummaryModal();
+            return;
+        }
+    }
+
+    currentSummary = summarizedText;
+    
+    // Store summary in conversation object
+    if (currentConversationId) {
+        const conversation = conversations.find(c => c.id === currentConversationId);
+        if (conversation) {
+            conversation.summary = summarizedText;
+            localStorage.setItem('conversations', JSON.stringify(conversations));
+        }
+    }
+    
+    if (updateUI) {
+        document.querySelector('.summary-loading').style.display = 'none';
+    }
+    
+    return summarizedText;
+}
+
+async function saveSummarySettings() {
+    const model = document.getElementById('summaryModel').value;
+    const windowSize = parseInt(document.getElementById('summaryWindow').value) || 5;
+    
+    summarySettings = { model, windowSize };
+    localStorage.setItem('summarySettings', JSON.stringify(summarySettings));
+    
+    // Clear existing summary since settings changed
+    currentSummary = '';
+    
+    showAlert('Summary settings saved');
+}
+function convertToMarkdown(conversation) {
+    let markdown = `# ${conversation.title}\n\n`;
+    markdown += `Date: ${new Date(conversation.id).toLocaleString()}\n\n`;
+    
+    conversation.messages.forEach(msg => {
+        if (msg.role === 'Human') {
+            markdown += `**Human**: ${msg.content}\n\n`;
+        } else {
+            markdown += `**${msg.role}** (${msg.avatar}): ${msg.content}\n\n`;
+        }
+    });
+    
+    return markdown;
+}
+
+// Add click handler for download button
+document.addEventListener('DOMContentLoaded', function() {
+    const downloadBtn = document.getElementById('downloadButton');
+    const dropdown = document.getElementById('downloadDropdown');
+    
+    downloadBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        dropdown.classList.toggle('show');
+    });
+    
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function(e) {
+        if (!dropdown.contains(e.target) && !downloadBtn.contains(e.target)) {
+            dropdown.classList.remove('show');
+        }
+    });
+});
+
+function downloadConversation(format) {
+    // Hide dropdown after selection
+    document.getElementById('downloadDropdown').classList.remove('show');
+    // Get current conversation
+    const conversation = conversations.find(conv => conv.id === currentConversationId);
+    if (!conversation) return;
+    
+    let content, type, extension;
+    
+    if (format === 'json') {
+        const exportData = {
+            title: conversation.title,
+            date: new Date(conversation.id).toISOString(),
+            messages: conversation.messages
+        };
+        content = JSON.stringify(exportData, null, 2);
+        type = 'application/json';
+        extension = 'json';
+    } else {
+        content = convertToMarkdown(conversation);
+        type = 'text/markdown';
+        extension = 'md';
+    }
+    
+    // Create blob and download
+    const blob = new Blob([content], { type });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `conversation-${conversation.title.toLowerCase().replace(/\s+/g, '-')}.${extension}`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
 updatePersonasList();
 
 function toggleAutoContinue() {

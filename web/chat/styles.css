@@ -560,6 +560,79 @@ input[type="range"] {
     border-radius: 8px;
 }
 
+.message-content {
+    white-space: pre-wrap;
+    line-height: 1.6;
+    position: relative;
+    padding-bottom: 32px;
+}
+
+.message-content .copy-hover-icon {
+    position: absolute;
+    right: 8px;
+    bottom: 8px;
+    color: #666;
+    opacity: 0;
+    transition: opacity 0.2s ease, background-color 0.2s ease;
+    cursor: pointer;
+    background: none;
+    border: none;
+    padding: 8px;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+}
+
+.message-content .copy-hover-icon:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+[data-theme="dark"] .message-content .copy-hover-icon:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.message-content:hover .copy-hover-icon {
+    opacity: 0.7;
+}
+
+.message-content .copy-hover-icon:hover {
+    opacity: 1;
+}
+
+[data-theme="dark"] .message-content .copy-hover-icon {
+    color: #999;
+}
+
+.copy-button {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: rgba(0, 0, 0, 0.1);
+    border: none;
+    border-radius: 4px;
+    padding: 4px;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.message-content:hover .copy-button {
+    opacity: 1;
+}
+
+[data-theme="dark"] .copy-button {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+}
+
+.modal-header-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
 .user-message {
     background: #f0f7ff;
     border: 1px solid #cce5ff;
@@ -619,6 +692,40 @@ input[type="range"] {
     border-radius: 8px;
     position: relative;
     padding-left: 48px;
+    transition: background-color 0.2s ease;
+}
+
+.ai-message:hover {
+    background-color: #f5f5f5;
+}
+
+[data-theme="dark"] .ai-message:hover {
+    background-color: #2a2a2a;
+}
+
+.ai-message .copy-icon {
+    position: absolute;
+    bottom: 8px;
+    right: 8px;
+    color: #666;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    cursor: pointer;
+    background: none;
+    border: none;
+    padding: 4px;
+}
+
+.ai-message:hover .copy-icon {
+    opacity: 0.7;
+}
+
+.ai-message .copy-icon:hover {
+    opacity: 1;
+}
+
+[data-theme="dark"] .ai-message .copy-icon {
+    color: #999;
 }
 
 .ai-avatar {
@@ -775,6 +882,68 @@ input[type="range"] {
     background: #d0d0d0;
 }
 
+.download-container {
+    position: relative;
+    display: inline-block;
+}
+
+.download-dropdown {
+    display: none;
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    z-index: 1000;
+    min-width: 160px;
+    padding: 8px 0;
+    opacity: 0;
+    transform: translateY(-10px);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.download-dropdown.show {
+    display: block;
+    opacity: 1;
+    transform: translateY(0);
+}
+
+[data-theme="dark"] .download-dropdown {
+    background: #2a2a2a;
+    border-color: #404040;
+}
+
+.dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 10px 16px;
+    border: none;
+    background: none;
+    text-align: left;
+    cursor: pointer;
+    white-space: nowrap;
+    color: inherit;
+    font-size: 14px;
+    transition: background 0.2s ease;
+}
+
+.dropdown-item:hover {
+    background: #f5f5f5;
+}
+
+[data-theme="dark"] .dropdown-item:hover {
+    background: #363636;
+}
+
+.dropdown-item .material-icons {
+    font-size: 18px;
+    opacity: 0.7;
+}
+
 .header-icon-button.active {
     background: #007bff;
     color: white;
@@ -845,6 +1014,48 @@ input[type="range"] {
     border-radius: 16px;
     max-height: 85vh;
     overflow-y: auto;
+}
+
+.tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 24px;
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 8px;
+}
+
+.tab-button {
+    padding: 8px 16px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+}
+
+.tab-button:hover {
+    background: #f0f0f0;
+}
+
+.tab-button.active {
+    background: #007bff;
+    color: white;
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+[data-theme="dark"] .tab-button:hover {
+    background: #333;
+}
+
+[data-theme="dark"] .tab-button.active {
+    background: #007bff;
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
     transform: translateY(20px);
     opacity: 0;
@@ -1134,6 +1345,82 @@ input[type="range"] {
 
 .btn-danger:hover {
     background-color: #c82333;
+}
+
+.summary-modal {
+    max-width: 800px;
+    width: 90%;
+    height: 80vh;
+}
+
+.summary-modal .modal-content {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.summary-modal .modal-body {
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;
+}
+
+.summary-loading {
+    text-align: center;
+    padding: 20px;
+}
+
+.summary-progress {
+    margin-bottom: 20px;
+    font-size: 1.1em;
+    color: #666;
+}
+
+[data-theme="dark"] .summary-progress {
+    color: #aaa;
+}
+
+#summaryText {
+    white-space: pre-wrap;
+    line-height: 1.6;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    margin-top: 20px;
+}
+
+[data-theme="dark"] #summaryText {
+    background: #2a2a2a;
+}
+
+.settings-section {
+    margin-bottom: 20px;
+}
+
+.setting-item {
+    margin-bottom: 16px;
+}
+
+.setting-item label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+}
+
+.setting-item select,
+.setting-item input {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    margin-bottom: 8px;
+}
+
+[data-theme="dark"] .setting-item select,
+[data-theme="dark"] .setting-item input {
+    background: #333;
+    border-color: #404040;
+    color: #fff;
 }
 
 [data-theme="dark"] .btn-danger {
