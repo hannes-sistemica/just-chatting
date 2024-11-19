@@ -181,10 +181,15 @@ function updateConversationsList() {
 }
 
 async function generateTitle(firstMessage) {
-    console.log('generateTitle called with message:', firstMessage);
+    console.log('generateTitle called with:', {
+        message: firstMessage,
+        backendUrl: backendUrl,
+        currentConversationId: currentConversationId
+    });
+    
     try {
         // First check if llama2 model is available
-        console.log('Fetching available models from:', backendUrl);
+        console.log('Fetching available models');
         const response = await fetch(`${backendUrl}/api/tags`);
         const data = await response.json();
         console.log('Available models:', data.models);
@@ -580,10 +585,22 @@ async function generateResponse(isAutoResponse = false) {
             conversation.messages = [...chatHistory];
             
             // Generate title after first message
+            console.log('Checking title generation conditions:', {
+                chatHistoryLength: chatHistory.length,
+                hasGeneratedTitle: conversation.hasGeneratedTitle,
+                conversationId: currentConversationId
+            });
+            
             if (chatHistory.length === 1 && !conversation.hasGeneratedTitle) {
+                console.log('Title generation conditions met');
                 conversation.title = 'New Chat'; // Set temporary title
+                
                 // Generate title asynchronously without blocking
-                console.log('Starting title generation for conversation:', currentConversationId);
+                console.log('Starting title generation for conversation:', {
+                    id: currentConversationId,
+                    firstMessage: chatHistory[0].content
+                });
+                
                 generateTitle(chatHistory[0].content)
                     .then(newTitle => {
                         console.log('Generated title:', newTitle);
