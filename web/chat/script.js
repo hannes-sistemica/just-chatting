@@ -978,9 +978,10 @@ if (conversations.length > 0) {
     startNewChat();
 }
 
-// Initialize right sidebar and play toggle
+// Initialize right sidebar, play toggle and download button
 document.getElementById('rightSidebarToggle').addEventListener('click', toggleRightSidebar);
 document.getElementById('playToggle').addEventListener('click', toggleAutoContinue);
+document.getElementById('downloadButton').addEventListener('click', () => exportConversation());
 updatePersonasList();
 
 function toggleAutoContinue() {
