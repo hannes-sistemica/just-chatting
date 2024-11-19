@@ -375,6 +375,8 @@ async function generateResponse(isAutoResponse = false) {
     }
 
     // Handle conversation flow
+    const promptInput = document.getElementById('prompt');
+    
     if (!isAutoResponse) {
         // Fresh start with human input
         remainingPersonas = [...selectedPersonas].sort(() => Math.random() - 0.5);
