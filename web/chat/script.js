@@ -614,12 +614,12 @@ document.getElementById('darkModeToggle').addEventListener('click', toggleTheme)
 initTheme();
 
 // Add these functions to your existing script.js
-function openSettingsModal() {
+async function openSettingsModal() {
     const modal = document.getElementById('settingsModal');
     modal.style.display = 'flex';
     requestAnimationFrame(() => modal.classList.add('show'));
     document.getElementById('backendUrl').value = backendUrl;
-    fetchModels(); // Refresh the model list when opening settings
+    await fetchModels(); // Wait for models to load
 }
 
 function saveBackendUrl() {
@@ -805,7 +805,7 @@ document.getElementById('sidebarToggle').addEventListener('click', toggleSidebar
 // Persona management functions
 let editingPersonaId = null;
 
-function openPersonaModal(personaId = null) {
+async function openPersonaModal(personaId = null) {
     const modal = document.getElementById('personaModal');
     const modelSelect = document.getElementById('personaModel');
     
@@ -813,12 +813,24 @@ function openPersonaModal(personaId = null) {
         modal.style.display = 'flex';
         requestAnimationFrame(() => modal.classList.add('show'));
     }
-    
-    // Fetch models first
-    fetchModels().then(() => {
-        const modelList = document.getElementById('modelList');
-        if (modelSelect && modelList) {
-            modelSelect.innerHTML = modelList.innerHTML;
+
+    try {
+        // Show loading state
+        if (modelSelect) {
+            modelSelect.innerHTML = '<option value="">Loading models...</option>';
+        }
+        
+        // Fetch models
+        await fetchModels();
+        
+        // Update model select with fetched models
+        const response = await fetch(`${backendUrl}/api/tags`);
+        const data = await response.json();
+        
+        if (modelSelect) {
+            modelSelect.innerHTML = data.models.map(model => 
+                `<option value="${model.name}">${model.name}</option>`
+            ).join('');
             
             // Set first model as default for new personas
             if (!personaId && modelSelect.options.length > 0) {
